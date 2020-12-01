@@ -3,9 +3,10 @@ import { useParams } from 'react-router-dom';
 import { API, Auth } from 'aws-amplify';
 import theme from './theme';
 
-import { listMessagesForRoom as ListMessages } from './graphql/queries';
-import { createMessage as CreateMessage } from './graphql/mutations';
-import { onCreateMessageByRoomId as OnCreateMessage } from './graphql/subscriptions';
+import { listChatMessagesForRoom as ListChatMessages } from './graphql/queries';
+import { createChatMessage as CreateChatMessage } from './graphql/mutations';
+import { onCreateChatMessageByRoomId as OnCreateChatMessage } from './graphql/subscriptions';
+
 
 const { primaryColor } = theme;
 
@@ -17,6 +18,7 @@ const initialState = {
   messages: [],
   loading: true
 }
+
 
 function reducer(state, action) {
   switch(action.type) {
@@ -72,17 +74,17 @@ export default function Chat() {
   }, []);
   function subscribe() {
     subscription = API.graphql({
-      query: OnCreateMessage,
+      query: OnCreateChatMessage,
       variables: {
         roomId: id
       }
     })
     .subscribe({
       next: async subscriptionData => {
-        const { value: { data: { onCreateMessageByRoomId }}} = subscriptionData;
+        const { value: { data: { onCreateChatMessageByRoomId }}} = subscriptionData;
         const currentUser = await Auth.currentAuthenticatedUser();
-        if (onCreateMessageByRoomId.owner === currentUser.username) return;
-        dispatch({ type: CREATE_MESSAGE, message: onCreateMessageByRoomId });
+        if (onCreateChatMessageByRoomId.userName === currentUser.username) return;
+        dispatch({ type: CREATE_MESSAGE, message: onCreateChatMessageByRoomId });
         executeScrollWithAnimation();
       }
     })
@@ -95,13 +97,13 @@ export default function Chat() {
   async function listMessages() {
     try {
       const messageData = await API.graphql({
-        query: ListMessages,
+        query: ListChatMessages,
         variables: {
           roomId: id,
           sortDirection: 'ASC'
         }
       })
-      dispatch({ type: SET_MESSAGES, messages: messageData.data.listMessagesForRoom.items });
+      dispatch({ type: SET_MESSAGES, messages: messageData.data.listChatMessagesForRoom.items });
       executeScroll();
     } catch (err) {
       console.log('error fetching messages: ', err)
@@ -109,20 +111,29 @@ export default function Chat() {
   }
   async function createMessage() {
     if (!inputValue) return;
-    const message = { owner: user.username, content: inputValue, roomId: id };
-    dispatch({ type: CREATE_MESSAGE, message });
-    setInputValue('');
+    const message = { userName: user.username, userId: user.username, content: inputValue, roomId: id };
+    console.log('message to create');
+    console.log(user);
+    console.log(message);
+  
     setTimeout(() => {
       executeScrollWithAnimation();
     })
     try {
-      await API.graphql({
-        query: CreateMessage,
+      const addResult = await API.graphql({
+        query: CreateChatMessage,
         variables: {
           input: message
         }
-      })
-      console.log('message created!')
+      });
+      console.log('addResult');
+      console.log(addResult);
+      if (addResult) {
+        dispatch({ type: CREATE_MESSAGE, message });
+        setInputValue('');
+        console.log('message created!')
+      }
+     
     } catch (err) {
       console.log('error creating message: ', err);
     }
@@ -149,7 +160,7 @@ export default function Chat() {
               key={message.id || message.content}
               style={messageContainerStyle(user, message)}>
               <p style={messageStyle(user, message)}>{message.content}</p>
-              <p style={ownerStyle(user, message)}>{message.owner}</p>
+              <p style={ownerStyle(user, message)}>{message.userName}</p>
             </div>
           ))
         }
@@ -172,7 +183,7 @@ export default function Chat() {
 }
 
 const messageContainerStyle = (user, message) => {
-  const isOwner = user && user.username === message.owner;
+  const isOwner = user && user.username === message.userName;
   return {
     backgroundColor: isOwner ? primaryColor : '#ddd',
     padding: '15px 18px',
@@ -184,7 +195,7 @@ const messageContainerStyle = (user, message) => {
 }
 
 const messageStyle = (user, message) => {
-  const isOwner = user && user.username === message.owner;
+  const isOwner = user && user.username === message.userName;
   return {
      color: isOwner ? 'white' : 'black',
      fontSize: 22,
@@ -193,7 +204,7 @@ const messageStyle = (user, message) => {
 }
 
 const ownerStyle = (user, message) => {
-  const isOwner = user && user.username === message.owner;
+  const isOwner = user && user.username === message.userName;
   return {
      color: isOwner ? '#ddd' : '#666',
      fontWeight: 400,

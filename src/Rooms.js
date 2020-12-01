@@ -3,9 +3,10 @@ import { Link, useHistory } from 'react-router-dom';
 import { API } from 'aws-amplify';
 
 import theme from './theme'
-import { listRooms } from './graphql/queries';
-import { createRoom as CreateRoom } from './graphql/mutations';
-import { onCreateRoom as OnCreateRoom } from './graphql/subscriptions';
+import { listChatRooms, listDefaultChatRooms } from './graphql/queries';
+import { createChatRoom as CreateChatRoom, CreateDefaultChatRooms } from './graphql/mutations';
+import { onCreateChatRoom as OnCreateChatRoom, OnCreateDefaultChatRooms } from './graphql/subscriptions';
+import { empty, reindex, AGENDA_ID, AGENDA_ID2} from './utils/helpers';
 
 const { primaryColor } = theme;
 
@@ -18,6 +19,7 @@ const initialState = {
   rooms: [],
   loading: true
 }
+
 
 function reducer(state, action) {
   switch (action.type) {
@@ -39,45 +41,96 @@ export default function Rooms() {
   let subscription;
 
   useEffect(() => {
-    fetchRooms();
+    fetchDefaultRooms();
     subscribe();
     return () => subscription.unsubscribe();
   }, []);
   function subscribe() {
     subscription = API.graphql({
-      query: OnCreateRoom
+      query: OnCreateDefaultChatRooms,
+      variables: {
+        agendaId: AGENDA_ID2
+      },
+      authMode: "AMAZON_COGNITO_USER_POOLS"
     })
     .subscribe({
       next: roomData => {
+        console.log("subscription");
         console.log({ roomData });
-        dispatch({ type: CREATE_ROOM, room: roomData.value.data.onCreateRoom });
+        //dispatch({ type: CREATE_ROOM, room: roomData.value.data.onCreateChatRoom });
       }
     })
   }
-  async function fetchRooms() {
+  async function fetchDefaultRooms() {
     try {
       const roomData = await API.graphql({
-        query: listRooms,
-        variables: { limit: 1000 }
+        query: listDefaultChatRooms,
+        variables: {
+          searchParams: {
+            sortDirection: "ASC",
+            agendaId: AGENDA_ID
+          }
+        },
+        authMode: "AMAZON_COGNITO_USER_POOLS"
       });
-      dispatch({ type: SET_ROOMS, rooms: roomData.data.listRooms.items });
-      console.log('roomData: ', roomData);
+      console.log('default roomData: ', roomData);
+      console.log(JSON.parse(roomData.data.listDefaultChatRooms.data));
+      let roomItems;
+      if (!empty(roomData) && !empty(roomData.data) && !empty(roomData.data.listDefaultChatRooms) && roomData.data.listDefaultChatRooms.data != null &&  !empty(roomData.data.listDefaultChatRooms.data) && !empty(JSON.parse(roomData.data.listDefaultChatRooms.data)) && !empty(JSON.parse(roomData.data.listDefaultChatRooms.data).items)) {
+        roomItems = JSON.parse(roomData.data.listDefaultChatRooms.data).items;
+      }else{
+        roomItems = [];
+      }
+    
+      if (empty(roomItems)) {
+        createDefaultChatRooms();
+      }
+      dispatch({ type: SET_ROOMS, rooms: roomItems });
+      
     } catch (err) {
       console.log('error: ', err)
     }
   }
-  async function createRoom() {
+  
+  async function createDefaultChatRooms() {
+    
+    try {
+      const room = await API.graphql({
+        query: CreateDefaultChatRooms,
+        variables: {
+          input: {
+            agendaId: AGENDA_ID2
+          }
+        },
+        authMode: "AMAZON_COGNITO_USER_POOLS"
+      })
+      console.log('create default room: ', room);
+      console.log("room");
+      console.log(JSON.parse(room.data.createDefaultChatRooms.data));
+      //history.push(`/chat/${room.data.createChatRoom.name}/${room.data.createChatRoom.id}`)
+    } catch (err) {
+      console.log('error creating room: ', err);
+    }
+  }
+  async function createChatRoom() {
     if (!inputValue) return;
     try {
       const room = await API.graphql({
-        query: CreateRoom,
+        query: CreateChatRoom,
         variables: {
           input: {
-            name: inputValue
+            name: inputValue,
+            defaultRoom: "No",
+            status: "ACTIVE",
+            agendaId:AGENDA_ID
           }
-        }
+        },
+        authMode: "AMAZON_COGNITO_USER_POOLS"
       })
-      history.push(`/chat/${room.data.createRoom.name}/${room.data.createRoom.id}`)
+      console.log('create room: ', room);
+      console.log(JSON.parse(room.data.createChatRoom.data));
+      console.log(room);
+      //history.push(`/chat/${room.data.createChatRoom.name}/${room.data.createChatRoom.id}`)
     } catch (err) {
       console.log('error creating room: ', err);
     }
@@ -107,7 +160,7 @@ export default function Rooms() {
           />
         </div>
         <div style={buttonWrapperStyle}>
-          <button onClick={createRoom} style={buttonStyle}>Create Room</button>
+          <button onClick={createDefaultChatRooms} style={buttonStyle}>Create Room</button>
         </div>
       </div>
     </div>

@@ -1,27 +1,40 @@
 /* eslint-disable */
 // this is an auto generated file. This will be overwritten
 
-export const createRoom = /* GraphQL */ `
-  mutation CreateRoom(
-    $input: RoomInput!
+export const createChatRoom = /* GraphQL */ `
+  mutation CreateChatRoom(
+    $input: ChatRoomInput!
   ) {
-    createRoom(input: $input) {
-      id
-      name
-      createdAt
+    createChatRoom(input: $input) {
+      success
+      data
+      errors
+    }
+  }
+`;
+export const CreateDefaultChatRooms = /* GraphQL */ `
+  mutation CreateDefaultChatRoom(
+    $input: ChatRoomInput!
+  ) {
+    createDefaultChatRooms(input: $input) {
+      success
+      data
+      errors
     }
   }
 `;
 
 
-export const createMessage = /* GraphQL */ `
-  mutation CreateMessage(
-    $input: MessageInput!
+export const createChatMessage = /* GraphQL */ `
+  mutation CreateChatMessage(
+    $input: ChatMessageInput!
   ) {
-    createMessage(input: $input) {
+    createChatMessage(input: $input) {
       id
       content
-      owner
+      userName
+      userId
+      agendaId
       createdAt
       roomId
     }

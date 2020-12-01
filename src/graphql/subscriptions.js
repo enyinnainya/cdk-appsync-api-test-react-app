@@ -1,23 +1,31 @@
 /* eslint-disable */
 // this is an auto generated file. This will be overwritten
 
-export const onCreateMessageByRoomId = /* GraphQL */ `
+export const onCreateChatMessageByRoomId = /* GraphQL */ `
   subscription OnCreateMessageByRoomId($roomId: ID) {
     onCreateMessageByRoomId(roomId: $roomId) {
-      id
-      content
-      owner
-      createdAt
-      roomId
+     success
+      data
+      errors
     }
   }
 `;
-export const onCreateRoom = /* GraphQL */ `
-  subscription OnCreateRoom {
-    onCreateRoom {
-      id
-      name
-      createdAt
+export const onCreateChatRoom = /* GraphQL */ `
+  subscription OnCreateChatRoom {
+    onCreateChatRoom {
+    success
+      data
+      errors
+    }
+  }
+`;
+
+export const OnCreateDefaultChatRooms = /* GraphQL */ `
+  subscription OnCreateDefaultChatRooms {
+    onCreateDefaultChatRooms {
+      success
+      data
+      errors
     }
   }
 `;

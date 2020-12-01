@@ -1,27 +1,36 @@
 /* eslint-disable */
 // this is an auto generated file. This will be overwritten
 
-export const listRooms = /* GraphQL */ `
-  query ListRooms(
-    $limit: Int
+export const listChatRooms = /* GraphQL */ `
+  query ListChatRooms(
+    $searchParams: ListChatRoomsSearchParamsInput
   ) {
-    listRooms(limit: $limit) {
-      items {
-        id
-        name
-        createdAt
-        updatedAt
-      }
+    listChatRooms(searchParams: $searchParams) {
+     success
+     data
+     errors
     }
   }
 `;
 
-export const listMessagesForRoom = /* GraphQL */ `
-  query ListMessagesForRoom(
+export const listDefaultChatRooms = /* GraphQL */ `
+  query ListDefaultChatRooms(
+    $searchParams: ListChatRoomsSearchParamsInput
+  ) {
+    listDefaultChatRooms(searchParams: $searchParams) {
+     success
+     data
+     errors
+    }
+  }
+`;
+
+export const listChatMessagesForRoom = /* GraphQL */ `
+  query ListChatMessagesForRoom(
     $roomId: ID
     $sortDirection: ModelSortDirection
   ) {
-    listMessagesForRoom(
+    listChatMessagesForRoom(
       roomId: $roomId
       sortDirection: $sortDirection
     ) {
